@@ -1,7 +1,9 @@
 package fachada;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import dao.DAO;
@@ -23,6 +25,8 @@ public class Fachada {
 	private static DAOUsuario daousuario = new DAOUsuario();  
 	private static DAOVideo daovideo = new DAOVideo();
 	private static DAOVisualizacao daovisualizacao = new DAOVisualizacao(); 
+	
+	private static DateTimeFormatter formatadorDT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
 
 	public static void inicializar(){
@@ -46,7 +50,7 @@ public class Fachada {
 		return u;
 	}
 
-	public static Video cadastrarVideo(String link, String nome, Assunto assunto) 
+	public static Video cadastrarVideo(String link, String nome) 
 			throws  Exception{
 		DAO.begin();	
 		Video v = daovideo.read(link);
@@ -54,14 +58,16 @@ public class Fachada {
 			DAO.rollback();
 			throw new Exception("video ja cadastrado:" + link);
 		}
-
-		Video v1 = new Video(link,nome,assunto);
-		daovideo.create(v1);	
-		DAO.commit();
-		return v1;
+//		Assunto assunto = Fachada.adicionarAssunto(v, palavra);
+		
+		v = new Video(link,nome);
+		daovideo.create(v);
+		v = daovideo.read(link);
+		DAO.commit();		
+		return v;
 	}
 
-	public static void adicionarAssunto(String palavra) 
+	public static Assunto adicionarAssunto(Video video, String palavra) 
 			throws  Exception{
 		DAO.begin();	
 		Assunto a = daoassunto.read(palavra);
@@ -69,9 +75,11 @@ public class Fachada {
 			DAO.rollback();
 			throw new Exception("assunto ja cadastrado:" + palavra);
 		}
-		Assunto ass = new Assunto(palavra);
+
+		Assunto ass = new Assunto(video,palavra);
 		daoassunto.create(ass);	
 		DAO.commit();
+		return ass;
 	}
 
 
@@ -121,7 +129,7 @@ public class Fachada {
 			throw new Exception("vizualizacao inexistente:" + id);
 		}
 		daovisualizacao.delete(v);
-		//DAO.commit();
+		DAO.commit();
 
 	}
 
@@ -136,10 +144,15 @@ public class Fachada {
 	public static List<Usuario> listarUsuarios(){ 
 		return daousuario.readAll(); 
 	}
+	
+	public static List<Assunto> listarAssuntos() {	
+		return daoassunto.readAll();
+	}
+	
 
-	public static List<Video> listarVideosPorAssunto(String assunto) throws Exception{ 
+	public static List<Video> listarVideosPorAssunto(String palavra) throws Exception{ 
 		DAO.begin();
-		Assunto a = daoassunto.read(assunto);
+		Assunto a = daoassunto.read(palavra);
 		if (a==null) {
 			DAO.rollback();
 			throw new Exception("assunto não vinculado a nenhum vídeo.");
@@ -217,7 +230,63 @@ public class Fachada {
 		return v;
 	}
 	
+	public static void esvaziar() throws  Exception{
+		DAO.clear();	//apaga todos objetos do banco
+	}
+//	public static void alterarDataCadastro(String link, String data) throws Exception {
+//		DAO.begin();
+//		Video v = daovideo.read(link);
+//		if (v==null) {
+//			DAO.rollback();
+//			throw new Exception("video não encontrado:" + link);
+//		}
+//		v.setDataHora(data);
+//	}
 	
+	public static Visualizacao alterarDataCadastro(int id, String data) throws Exception{
+		LocalDate dt;
+		try {
+			dt = LocalDate.parse(data, formatadorDT);
+		}
+		catch(DateTimeParseException e) {
+			throw new Exception("formato data invalido:"+ data);
+		}
+
+		DAO.begin();		
+		Visualizacao v = daovisualizacao.read(id);	//usando  chave primaria
+		if (v==null) {
+			DAO.rollback();
+			throw new Exception("visualização não encontrada.");
+		}
+		v.setDataHora(dt); 			
+		v=daovisualizacao.update(v);     	
+		DAO.commit();
+		return v;
+	}
+	
+	// Consultas JPQL
+	public static List<Video> listarVideoPorVisualizacoes(int i) throws Exception {
+		List<Video> videos = daovideo.readQtdVisualizacoes(i);
+		if (videos==null) {
+			throw new Exception("Nenhum vídeo corresponde a pesquisa.");
+		}
+		return videos;
+	}
+	
+	public static List<Assunto> listarAssuntos(String parte) throws Exception {	
+		List<Assunto> assuntos = daoassunto.readAssunto(parte);
+		if (assuntos==null) {
+			throw new Exception("assunto não localizado.");
+		}
+		return assuntos;
+	}
+	public static List<Visualizacao> listarVisualizacoesPorIdade(int idade) throws Exception {
+		List<Visualizacao> vis = daovisualizacao.readIdadeVisualizacoes(idade);
+		if (vis==null) {
+			throw new Exception("Nenhuma visualizacao encontrada.");
+		}
+		return vis;
+	}
 
 }
 

@@ -103,8 +103,8 @@ public class Tela_Cadastro_Video {
 					String link = textField.getText();
 					String nome = textField_1.getText();
 					String palavra = textField_2.getText();
-					Assunto assunto = new Assunto(palavra);
-					Fachada.cadastrarVideo(link, nome,assunto);
+//					Assunto assunto = new Assunto(palavra);
+					Fachada.cadastrarVideo(link, nome);
 					textField.setText("");
 					textField_1.setText("");
 					textField_2.setText("");

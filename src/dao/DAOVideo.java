@@ -1,21 +1,37 @@
+/**IFPB - Curso SI - Disciplina de POB
+ * @author Prof Fausto Ayres
+ */
 package dao;
 
 import java.util.List;
-import com.db4o.query.Query;
+
+import javax.persistence.NoResultException;
+import javax.persistence.TypedQuery;
+
 import modelo.Video;
 
-public class DAOVideo extends DAO<Video>{
-
-	public Video read (Object chave) {
-		String link = (String) chave;
-		
-		Query q = manager.query();
-		q.constrain(Video.class);
-		q.descend("link").constrain(link);
-		List<Video> resultados = q.execute();
-		if (resultados.size()>0)
-			return resultados.get(0);
-		else
+public class DAOVideo  extends DAO<Video>{
+	
+	public Video read (Object chave){
+		try{
+			String link = (String) chave;
+			TypedQuery<Video> q = manager.createQuery("select v from Video v where v.link =:l ",Video.class);
+			q.setParameter("l", link);
+			
+			return q.getSingleResult();
+		}catch(NoResultException e){
 			return null;
+		}
+	}
+//
+//	//--------------------------------------------
+//	//  consultas
+//	//--------------------------------------------
+//
+	public List<Video> readQtdVisualizacoes (int vis){		
+		TypedQuery<Video> q = manager.createQuery
+				("select v from Video v where SIZE(v.visualizacoes) =:k",Video.class);
+		q.setParameter("k", vis);
+		return q.getResultList();
 	}
 }

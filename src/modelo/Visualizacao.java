@@ -1,40 +1,71 @@
 package modelo;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDate;
 
-import dao.DAO;
-import dao.DAOVisualizacao;
-import fachada.Fachada;
+import javax.persistence.Cacheable;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EntityListeners;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+import javax.persistence.Version;
 
+import dao.TriggerListener;
+
+
+@Entity
+@Cacheable(true)
+@EntityListeners(TriggerListener.class)
+@Table(name="Visualizacao20191370006")
 public class Visualizacao {
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;
-	private String datahora = LocalDateTime.now()
-			.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
-	private int nota;
+	
+	@Column(columnDefinition = "DATETIME")
+	private LocalDate datahora = LocalDate.now();
+	
+	@ManyToOne()
 	private Usuario usuario;
+	
+	@Transient
+	private int idade;
+	
+	private int nota;
+	
+	@Version
+	private int versao;
+	
+	@ManyToOne(cascade={ CascadeType.PERSIST,
+			CascadeType.MERGE } )
 	private Video video;
-	private List<Video> videos = new ArrayList<>();
-	private Object getId;
+	
+	public Visualizacao() {}
 	
 	public Visualizacao(Video video, Usuario usuario, int nota) {
-		this.id = bucarMaxId() + 1;
 		this.nota = nota;
 		this.usuario = usuario;
 		this.video = video;
-		video.calcularClassificacao();
+		video.calcularClassificacao(nota);
 	}
 
-	private int bucarMaxId() {
-		List<Visualizacao> lista= Fachada.listarVisualizacoes();
-		return lista.size();
-	}
-	
+
 	public int getId(){
 		return id;
 	}
+	
+	public LocalDate getDataHora() {
+		return datahora;
+	}
 
+	public void setDataHora(LocalDate datahora) {
+		this.datahora = datahora;
+	}
+	
 	public Usuario getUsuario() {
 		return usuario;
 	}
@@ -51,12 +82,16 @@ public class Visualizacao {
 	public String toString() {
 		return "Visualizacao [id=" + id + 
 				", datahora=" + datahora + 
-				", nota=" + nota +
+				", nota=" + nota + ", idade=" + idade + " dias" +
 				"\n usuario=" + usuario.getEmail() + ", video=" + video.getNome() + "]";
 	}
 
-	
-	
-	
+	public int getIdade() {
+		return idade;
+	}
 
+	public void setIdade(int idade) {
+		this.idade = idade;
+	}
+	
 }
